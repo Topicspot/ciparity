@@ -1,0 +1,8 @@
+- id: ciparity
+  name: ciparity
+  description: Report drift between pre-commit hooks and GitHub Actions steps.
+  entry: ciparity
+  language: python
+  pass_filenames: false
+  always_run: true
+  files: ^(\.pre-commit-config\.yaml|\.github/workflows/.*)$
