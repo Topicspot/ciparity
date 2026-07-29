@@ -12,7 +12,8 @@ pre-commit 钩子和 CI 本该运行相同的检查，但它们会慢慢分叉�
 `mypy --strict`，有人加了 CI 从不运行的钩子。结果是本地绿、推送后红，更糟的是到处都绿，而某项
 检查已经悄悄停止运行。
 
-ciparity 读取 `.pre-commit-config.yaml` 和 `.github/workflows/*.yml`，指出两边不一致的地方。
+ciparity 读取 `.pre-commit-config.yaml` 以及你的流水线（GitHub Actions 或 GitLab CI），指出两边
+不一致的地方。
 只做静态解析：不联网、不需要 Docker、不需要密钥，也从不执行你的工具。
 
 ```bash
@@ -21,18 +22,23 @@ ciparity .
 ```
 
 ```
-pre-commit hooks: 5   CI steps: 4
+pre-commit hooks: 5   CI steps: 4   ci: GitHub Actions
 
-ruff    version differs: pinned to different versions
-            pre-commit: 0.5.0
-            ci:         0.6.2
-mypy    arguments differ: different arguments
-            pre-commit: -
-            ci:         --strict
-pytest  not in pre-commit: runs in CI but is not a pre-commit hook
-            ci:         ci.yml:test
+mypy     arguments differ: different arguments
+           pre-commit: -
+           ci:         --strict
+ruff     version differs: pinned to different versions
+           pre-commit: 0.5.0
+           ci:         0.6.2
+           fix:        rev v0.5.0 -> v0.6.2
+vulture  not in pre-commit: runs in CI but is not a pre-commit hook
+           ci:         ci.yml:test
+python   python differs: pre-commit pins a python version CI never sets up
+           pre-commit: 3.11
+           ci:         3.12
 
-3 difference(s).
+4 difference(s).
+1 can be fixed automatically: ciparity --fix
 ```
 
 存在差异时退出码为 1，因此它可以直接当作一项检查使用。
@@ -66,14 +72,15 @@ ciparity [path] [--fix [--dry-run]] [--json] [--ignore pytest,codespell] [--exit
 ```yaml
 repos:
   - repo: https://github.com/Topicspot/ciparity
-    rev: v0.2.0
+    rev: v0.3.0
     hooks:
       - id: ciparity
 ```
 
 ## 局限
 
-当前版本只解析 GitHub Actions。只比较可识别的工具：`trailing-whitespace` 这类文件整洁钩子被
+支持 GitHub Actions（`.github/workflows/*.yml`）和 GitLab CI（`.gitlab-ci.yml`，运行时版本取自
+`image:`）；`include:` 只展开本地文件。只比较可识别的工具：`trailing-whitespace` 这类文件整洁钩子被
 刻意忽略，因为没人在 CI 里跑它们。如果 workflow 执行 `pre-commit run --all-files`，两边按定义
 一致。复合动作和可复用 workflow 不会被展开。
 

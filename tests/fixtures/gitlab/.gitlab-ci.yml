@@ -1,0 +1,21 @@
+default:
+  image: python:3.12-slim
+  before_script:
+    - pip install ruff==0.6.2 mypy==1.10.0 pytest
+
+stages: [lint, test]
+
+.lint_template:
+  stage: lint
+
+lint:
+  extends: .lint_template
+  script:
+    - ruff check .
+    - mypy --strict src
+
+test:
+  stage: test
+  script:
+    - pytest -q
+    - vulture src

@@ -1,0 +1,4 @@
+lint:
+  script:
+    - pip install ruff==0.5.9
+    - ruff check .

@@ -85,6 +85,7 @@ def _merge(facts: list[CiFacts]) -> CiFacts:
         merged.nodes |= facts_item.nodes
         merged.runs_precommit = merged.runs_precommit or facts_item.runs_precommit
         merged.precommit_all_files = merged.precommit_all_files and facts_item.precommit_all_files
+        merged.notes.extend(facts_item.notes)
     return merged
 
 
@@ -184,11 +185,12 @@ def compare(root: Path, ignore: set[str] | None = None) -> Report:
     if not config.exists() or not provider_facts:
         return report
 
+    report.notes.extend(ci.notes)
     delegated = pre.uses_precommit_ci or ci.runs_precommit
     if pre.uses_precommit_ci:
         report.notes.append("pre-commit.ci is configured, so hooks run on every pull request.")
     elif ci.runs_precommit:
-        report.notes.append("A workflow runs pre-commit itself, so hooks cannot go missing in CI.")
+        report.notes.append("A CI job runs pre-commit itself, so hooks cannot go missing in CI.")
 
     runners = sorted(TASK_RUNNERS & {u.name for u in ci.uses})
     if runners:

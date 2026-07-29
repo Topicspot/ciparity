@@ -2,75 +2,14 @@
 
 from __future__ import annotations
 
-import re
-import shlex
 from pathlib import Path
 from typing import Any
 
 import yaml
 
 from ..model import CiFacts, ToolUse
-from ..tools import ACTION_TOOLS, KNOWN_COMMANDS, WRAPPERS, canonical
-
-_PIP_INSTALL = re.compile(
-    r"\b(?:pip|pip3|uv pip|uv tool|pipx)\s+install\s+(?P<rest>[^\n&|;]+)", re.IGNORECASE
-)
-_NPM_INSTALL = re.compile(
-    r"\b(?:npm\s+(?:i|install)|pnpm\s+add|yarn\s+add)\s+(?P<rest>[^\n&|;]+)", re.IGNORECASE
-)
-_SPEC = re.compile(r"^(?P<name>[A-Za-z0-9._-]+)(?:==|@)(?P<version>[0-9][^\s,;]*)$")
-
-
-def _installed_versions(script: str) -> dict[str, str]:
-    found: dict[str, str] = {}
-    for pattern in (_PIP_INSTALL, _NPM_INSTALL):
-        for match in pattern.finditer(script):
-            for token in match.group("rest").split():
-                token = token.strip("'\"")
-                if token.startswith("-"):
-                    continue
-                spec = _SPEC.match(token)
-                if spec:
-                    found[canonical(spec.group("name"))] = spec.group("version").lstrip("v")
-    return found
-
-
-def _commands(script: str) -> list[list[str]]:
-    out: list[list[str]] = []
-    for raw_line in script.splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#"):
-            continue
-        for part in re.split(r"&&|\|\||;|\|", line):
-            try:
-                tokens = shlex.split(part.strip())
-            except ValueError:
-                continue
-            if tokens:
-                out.append(tokens)
-    return out
-
-
-def _tool_from_tokens(tokens: list[str]) -> tuple[str, tuple[str, ...], str | None] | None:
-    index = 0
-    while index < len(tokens) and tokens[index] in WRAPPERS:
-        index += 1
-    rest = tokens[index:]
-    if not rest:
-        return None
-    if rest[0] in {"python", "python3"} and len(rest) > 2 and rest[1] == "-m":
-        rest = rest[2:]
-    head = rest[0]
-    inline_version: str | None = None
-    if "@" in head:
-        # npx prettier@3.9.0, uvx ruff@0.6.2
-        head, _, spec = head.partition("@")
-        inline_version = spec.lstrip("v") or None
-    name = canonical(head)
-    if name not in KNOWN_COMMANDS:
-        return None
-    flags = tuple(sorted({t for t in rest[1:] if t.startswith("-")}))
-    return name, flags, inline_version
+from ..tools import ACTION_TOOLS
+from ._shell import commands, installed_versions, precommit_invocation, tool_from_tokens
 
 
 def _versions_for(node: Any, keys: set[str], found: set[str]) -> None:
@@ -92,7 +31,6 @@ def _versions_for(node: Any, keys: set[str], found: set[str]) -> None:
 
 _PYTHON_KEYS = {"python-version", "python-versions"}
 _NODE_KEYS = {"node-version", "node-versions"}
-_PRECOMMIT_RUN = re.compile(r"pre-commit\s+run\b(?P<rest>[^\n]*)")
 
 
 def parse_workflow(path: Path) -> tuple[list[ToolUse], set[str], set[str]]:
@@ -115,7 +53,7 @@ def parse_workflow(path: Path) -> tuple[list[ToolUse], set[str], set[str]]:
             continue
         steps = job.get("steps") or []
         script = "\n".join(str(s.get("run", "")) for s in steps if isinstance(s, dict))
-        versions = _installed_versions(script)
+        versions = installed_versions(script)
         for step in steps:
             if not isinstance(step, dict):
                 continue
@@ -138,8 +76,8 @@ def parse_workflow(path: Path) -> tuple[list[ToolUse], set[str], set[str]]:
             run = step.get("run")
             if not isinstance(run, str):
                 continue
-            for tokens in _commands(run):
-                parsed = _tool_from_tokens(tokens)
+            for tokens in commands(run):
+                parsed = tool_from_tokens(tokens)
                 if parsed is None:
                     continue
                 name, flags, inline_version = parsed
@@ -153,18 +91,6 @@ def parse_workflow(path: Path) -> tuple[list[ToolUse], set[str], set[str]]:
                     )
                 )
     return uses, pythons, nodes
-
-
-def _precommit_invocation(text: str) -> tuple[bool, bool]:
-    """Return whether a workflow runs pre-commit, and whether it covers every file."""
-    if "pre-commit/action" in text:
-        # The official action runs `pre-commit run --all-files` by default.
-        return True, True
-    runs = _PRECOMMIT_RUN.findall(text)
-    if not runs:
-        return False, True
-    all_files = any("--all-files" in rest or "-a " in f" {rest} " for rest in runs)
-    return True, all_files
 
 
 class GitHubActions:
@@ -189,5 +115,7 @@ class GitHubActions:
             facts.pythons |= pythons
             facts.nodes |= nodes
             text += path.read_text(encoding="utf-8") + "\n"
-        facts.runs_precommit, facts.precommit_all_files = _precommit_invocation(text)
+        facts.runs_precommit, facts.precommit_all_files = precommit_invocation(
+            text, official_action="pre-commit/action" in text
+        )
         return facts

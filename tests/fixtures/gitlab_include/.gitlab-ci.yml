@@ -1,0 +1,10 @@
+include:
+  - local: ci/lint.yml
+  - project: group/templates
+    file: /security.yml
+
+image: python:3.12
+
+test:
+  script:
+    - pytest -q

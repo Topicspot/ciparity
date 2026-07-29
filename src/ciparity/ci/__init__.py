@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Protocol
 
 from ..model import CiFacts
-from . import github
+from . import github, gitlab
 
 
 class Provider(Protocol):
@@ -22,7 +22,7 @@ class Provider(Protocol):
     def parse(self, root: Path) -> CiFacts: ...
 
 
-PROVIDERS: tuple[Provider, ...] = (github.GitHubActions(),)
+PROVIDERS: tuple[Provider, ...] = (github.GitHubActions(), gitlab.GitLabCI())
 
 
 def collect(root: Path) -> list[CiFacts]:
