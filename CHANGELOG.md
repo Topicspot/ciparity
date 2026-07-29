@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 - 2026-07-29
+
+- `ciparity --fix` rewrites hook revs in `.pre-commit-config.yaml` to the version CI already
+  uses. The file is edited as text, so comments, quotes and key order survive. `--dry-run`
+  prints the diff and writes nothing. Workflows are never rewritten.
+- New check: CI runs `pre-commit run` without `--all-files`, so hooks only see changed files.
+- New check: node version drift between `default_language_version` and `actions/setup-node`.
+- Parsing moved behind a provider interface (`ciparity.ci`), so a second CI system is a new
+  module rather than a rewrite. GitHub Actions is still the only provider.
+- Findings now say whether they are fixable, in text output and in `--json`.
+
 ## 0.1.1 - 2026-07-29
 
 - The package version is now read from installed metadata instead of being duplicated in

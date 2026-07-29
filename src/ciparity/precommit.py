@@ -9,7 +9,7 @@ from typing import Any
 
 import yaml
 
-from .model import ToolUse
+from .model import PreCommitFacts, ToolUse
 from .tools import canonical, from_repo
 
 
@@ -43,24 +43,26 @@ def _clean_rev(rev: Any) -> str | None:
     return text.lstrip("v")
 
 
-def parse_precommit(path: Path) -> tuple[list[ToolUse], str | None, bool]:
-    """Return tool uses, the pinned default python version, and pre-commit.ci usage."""
+def parse_precommit(path: Path) -> PreCommitFacts:
+    """Read .pre-commit-config.yaml into facts the comparison can use."""
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     if not isinstance(data, dict):
-        return [], None, False
+        return PreCommitFacts()
 
-    uses_precommit_ci = isinstance(data.get("ci"), dict)
-    python: str | None = None
+    facts = PreCommitFacts(uses_precommit_ci=isinstance(data.get("ci"), dict))
     defaults = data.get("default_language_version")
-    if isinstance(defaults, dict) and defaults.get("python"):
-        python = str(defaults["python"]).removeprefix("python")
+    if isinstance(defaults, dict):
+        if defaults.get("python"):
+            facts.python = str(defaults["python"]).removeprefix("python")
+        if defaults.get("node"):
+            facts.node = str(defaults["node"]).lstrip("v")
 
-    uses: list[ToolUse] = []
     for repo_block in data.get("repos") or []:
         if not isinstance(repo_block, dict):
             continue
         repo = str(repo_block.get("repo", ""))
-        rev = _clean_rev(repo_block.get("rev"))
+        raw_rev = repo_block.get("rev")
+        rev = _clean_rev(raw_rev)
         repo_tool = from_repo(repo)
         for hook in repo_block.get("hooks") or []:
             if not isinstance(hook, dict):
@@ -71,13 +73,16 @@ def parse_precommit(path: Path) -> tuple[list[ToolUse], str | None, bool]:
             name = canonical(hook_id)
             if repo_tool and name not in {repo_tool, f"{repo_tool}-format"}:
                 name = repo_tool
-            uses.append(
+            local = repo == "local"
+            facts.uses.append(
                 ToolUse(
                     name=name,
-                    version=None if repo == "local" else rev,
+                    version=None if local else rev,
                     args=_flags(hook.get("args")),
                     source="pre-commit",
                     location=f"{path.name}:{hook_id}",
+                    repo=None if local else repo,
+                    raw_rev=None if raw_rev is None else str(raw_rev).strip(),
                 )
             )
-    return uses, python, uses_precommit_ci
+    return facts

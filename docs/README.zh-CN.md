@@ -46,10 +46,19 @@ pytest  not in pre-commit: runs in CI but is not a pre-commit hook
 | 参数漂移 | CI 传了 `--strict`，钩子没有 |
 | Python 版本 | `default_language_version: python3.11`，而 CI 只安装 3.12 |
 
+## 自动修复
+
+```bash
+ciparity --fix
+```
+
+把 `.pre-commit-config.yaml` 里的 `rev:` 改成 CI 已经在用的版本。文件按文本方式编辑，注释、
+引号和键顺序都会保留。`--fix --dry-run` 只显示 diff，不写入。工具不会修改 workflow 文件。
+
 ## 用法
 
 ```
-ciparity [path] [--json] [--ignore pytest,codespell] [--exit-zero]
+ciparity [path] [--fix [--dry-run]] [--json] [--ignore pytest,codespell] [--exit-zero]
 ```
 
 作为 pre-commit 钩子：
@@ -57,7 +66,7 @@ ciparity [path] [--json] [--ignore pytest,codespell] [--exit-zero]
 ```yaml
 repos:
   - repo: https://github.com/Topicspot/ciparity
-    rev: v0.1.1
+    rev: v0.2.0
     hooks:
       - id: ciparity
 ```

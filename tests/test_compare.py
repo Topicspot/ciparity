@@ -100,3 +100,26 @@ def test_precommit_ci_block_is_treated_as_parity(tmp_path: Path) -> None:
     report = compare(tmp_path)
     assert report.ok
     assert any("pre-commit.ci" in note for note in report.notes)
+
+
+def test_ci_running_pre_commit_on_changed_files_only_is_reported() -> None:
+    report = compare(FIXTURES / "scoped")
+    assert [f.kind for f in report.findings] == ["scope"]
+
+
+def test_node_version_drift_is_reported() -> None:
+    report = compare(FIXTURES / "node")
+    assert [(f.tool, f.kind) for f in report.findings] == [("node", "node")]
+
+
+def test_version_findings_carry_a_fix() -> None:
+    report = compare(FIXTURES / "drift")
+    version = next(f for f in report.findings if f.kind == "version")
+    assert version.fix is not None
+    assert version.fix.current_rev == "v0.5.0"
+    assert version.fix.new_rev == "v0.6.2"
+    assert [f.kind for f in report.fixable] == ["version"]
+
+
+def test_providers_are_listed() -> None:
+    assert compare(FIXTURES / "clean").providers == ["GitHub Actions"]
