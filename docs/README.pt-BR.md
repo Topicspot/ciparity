@@ -13,8 +13,8 @@ adiciona `mypy --strict` só no CI, alguém cria um hook que o CI nunca executa.
 branch verde no local e vermelha no push ou, pior, verde em todo lugar enquanto uma verificação
 parou de rodar em silêncio.
 
-ciparity lê `.pre-commit-config.yaml` e `.github/workflows/*.yml` e mostra onde os dois
-divergem. Apenas análise estática: sem rede, sem Docker, sem chaves de API, e ele nunca executa
+ciparity lê `.pre-commit-config.yaml` e o seu pipeline, GitHub Actions ou GitLab CI, e mostra
+onde os dois divergem. Apenas análise estática: sem rede, sem Docker, sem chaves de API, e ele nunca executa
 suas ferramentas.
 
 ```bash
@@ -23,18 +23,23 @@ ciparity .
 ```
 
 ```
-pre-commit hooks: 5   CI steps: 4
+pre-commit hooks: 5   CI steps: 4   ci: GitHub Actions
 
-ruff    version differs: pinned to different versions
-            pre-commit: 0.5.0
-            ci:         0.6.2
-mypy    arguments differ: different arguments
-            pre-commit: -
-            ci:         --strict
-pytest  not in pre-commit: runs in CI but is not a pre-commit hook
-            ci:         ci.yml:test
+mypy     arguments differ: different arguments
+           pre-commit: -
+           ci:         --strict
+ruff     version differs: pinned to different versions
+           pre-commit: 0.5.0
+           ci:         0.6.2
+           fix:        rev v0.5.0 -> v0.6.2
+vulture  not in pre-commit: runs in CI but is not a pre-commit hook
+           ci:         ci.yml:test
+python   python differs: pre-commit pins a python version CI never sets up
+           pre-commit: 3.11
+           ci:         3.12
 
-3 difference(s).
+4 difference(s).
+1 can be fixed automatically: ciparity --fix
 ```
 
 O código de saída é 1 quando há diferenças, então dá para usar como verificação.
@@ -69,14 +74,16 @@ Como hook de pre-commit:
 ```yaml
 repos:
   - repo: https://github.com/Topicspot/ciparity
-    rev: v0.2.0
+    rev: v0.3.0
     hooks:
       - id: ciparity
 ```
 
 ## Limites
 
-Esta versão analisa apenas GitHub Actions. Só compara ferramentas reconhecidas: hooks de higiene
+Analisa GitHub Actions (`.github/workflows/*.yml`) e GitLab CI (`.gitlab-ci.yml`, as versões vêm
+do `image:`); `include:` é seguido apenas para arquivos locais. Só compara ferramentas
+reconhecidas: hooks de higiene
 de arquivos como `trailing-whitespace` são ignorados de propósito, ninguém os roda no CI. Se um
 workflow executa `pre-commit run --all-files`, os dois lados são equivalentes por definição.
 Actions compostas e workflows reutilizáveis não são seguidos.

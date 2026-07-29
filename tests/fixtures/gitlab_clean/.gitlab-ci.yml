@@ -1,0 +1,6 @@
+image: python:3.11
+
+quality:
+  script:
+    - pip install pre-commit
+    - pre-commit run --all-files

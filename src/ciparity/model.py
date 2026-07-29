@@ -83,6 +83,7 @@ class CiFacts:
     nodes: set[str] = field(default_factory=set)
     runs_precommit: bool = False
     precommit_all_files: bool = True
+    notes: list[str] = field(default_factory=list)
 
 
 @dataclass

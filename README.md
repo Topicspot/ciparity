@@ -12,9 +12,9 @@ Your hooks passed. CI failed anyway. The two configs drifted apart: someone bump
 someone added a hook CI never runs. The worse case is quieter: both sides green while a check
 stopped running months ago.
 
-ciparity reads `.pre-commit-config.yaml` and your CI pipeline and prints where they disagree,
-then fixes the version drift for you. Static parsing only: no network, no Docker, no API keys,
-and it never runs your tools.
+ciparity reads `.pre-commit-config.yaml` and your CI pipeline, GitHub Actions or GitLab CI, and
+prints where they disagree, then fixes the version drift for you. Static parsing only: no
+network, no Docker, no API keys, and it never runs your tools.
 
 ```bash
 pip install ciparity
@@ -22,7 +22,7 @@ ciparity .
 ```
 
 ```
-pre-commit hooks: 5   CI steps: 4
+pre-commit hooks: 5   CI steps: 4   ci: GitHub Actions
 
 mypy     arguments differ: different arguments
            pre-commit: -
@@ -70,7 +70,7 @@ Exit code is 1 when there are differences, so it works as a check.
 
 | Check | Example |
 | --- | --- |
-| Tool in one side only | `vulture` is a hook, no workflow runs it |
+| Tool in one side only | `vulture` is a hook, no CI job runs it |
 | Version drift | hook `rev: v0.5.0` against `pip install ruff==0.6.2`, fixable |
 | Argument drift | `--strict` passed in CI but not in the hook |
 | Python version | `default_language_version: python3.11` while CI sets up only 3.12 |
@@ -79,8 +79,18 @@ Exit code is 1 when there are differences, so it works as a check.
 
 Versions are read from hook `rev:`, from `pip install tool==x`, `uv tool install`, `pipx install`,
 `npm i -g tool@x`, and from the `version:` input of known actions such as `astral-sh/ruff-action`.
-Commands are found inside `run:` blocks, including behind `uv run`, `uvx`, `poetry run`, `npx`
-and `python -m`.
+Commands are found in workflow `run:` blocks and in GitLab `script:` blocks, including behind
+`uv run`, `uvx`, `poetry run`, `npx` and `python -m`.
+
+## Supported CI
+
+| Provider | Read from | Runtime versions from |
+| --- | --- | --- |
+| GitHub Actions | `.github/workflows/*.yml` | `setup-python`, `setup-node` |
+| GitLab CI | `.gitlab-ci.yml`, plus `include: local:` files | the job `image:`, `python:3.12-slim` |
+
+Both are parsed when both exist, and a repository that pins different versions in different
+pipelines gets reported instead of silently fixed.
 
 ## Usage
 
@@ -93,18 +103,21 @@ As a pre-commit hook:
 ```yaml
 repos:
   - repo: https://github.com/Topicspot/ciparity
-    rev: v0.2.0
+    rev: v0.3.0
     hooks:
       - id: ciparity
 ```
 
 ## Deliberate non-goals and limits
 
-- Only GitHub Actions is parsed today. The parser layer is provider based, GitLab CI is next.
-- `--fix` only edits `.pre-commit-config.yaml`. It never rewrites your workflows.
+- Only GitHub Actions and GitLab CI are parsed. Other systems are a new module in
+  `ciparity/ci/`, and pull requests are welcome.
+- `--fix` only edits `.pre-commit-config.yaml`. It never rewrites your pipelines.
+- GitLab `include:` is followed for local files only. Remote and template includes are reported
+  as a blind spot rather than ignored quietly.
 - Only tools it recognises are compared. File hygiene hooks like `trailing-whitespace` are
   ignored on purpose, nobody runs those in CI and reporting them would be noise.
-- If a workflow runs `pre-commit run --all-files`, the two sides are parity by definition and
+- If a CI job runs `pre-commit run --all-files`, the two sides are parity by definition and
   "missing in CI" findings are suppressed.
 - Composite actions and reusable workflows are not followed, so tools that only run inside them
   are invisible.

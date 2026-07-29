@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.0 - 2026-07-29
+
+- GitLab CI is parsed: jobs in `.gitlab-ci.yml`, commands from `before_script`, `script` and
+  `after_script`, tool versions from the shell, python and node versions from the job `image:`.
+  Local `include:` files are read; includes ciparity cannot reach are reported as a blind spot
+  instead of being ignored.
+- Both providers are compared at once when a repository has both, and a version that two
+  pipelines disagree about is reported but never auto-fixed.
+- Shell parsing moved to `ciparity.ci._shell`, so a provider only describes where its scripts
+  live.
+- Text output names the CI systems it found.
+
 ## 0.2.0 - 2026-07-29
 
 - `ciparity --fix` rewrites hook revs in `.pre-commit-config.yaml` to the version CI already

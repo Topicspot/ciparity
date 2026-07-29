@@ -26,10 +26,10 @@ KIND_LABEL = {
 def _text(report: Report, root: Path) -> str:
     if not report.pre_commit_tools and not report.ci_tools:
         return f"No .pre-commit-config.yaml and no CI pipeline found in {root}."
-    lines = [
-        f"pre-commit hooks: {len(report.pre_commit_tools)}   CI steps: {len(report.ci_tools)}",
-        "",
-    ]
+    header = f"pre-commit hooks: {len(report.pre_commit_tools)}   CI steps: {len(report.ci_tools)}"
+    if report.providers:
+        header += f"   ci: {', '.join(report.providers)}"
+    lines = [header, ""]
     if report.ok:
         lines.append("No differences found.")
         lines.extend(f"note: {n}" for n in report.notes)
