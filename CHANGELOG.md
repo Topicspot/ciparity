@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 - 2026-07-29
+
+- The package version is now read from installed metadata instead of being duplicated in
+  `__init__.py`, and a test fails if it drifts from pyproject.toml.
+- Added README translations (Русский, 简体中文, Español, Português) with a language switcher
+  and a badge row.
+
 ## 0.1.0 - 2026-07-29
 
 First release.

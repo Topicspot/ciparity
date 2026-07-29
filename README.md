@@ -1,5 +1,12 @@
 # ciparity
 
+**English** · [Русский](docs/README.ru.md) · [简体中文](docs/README.zh-CN.md) · [Español](docs/README.es.md) · [Português](docs/README.pt-BR.md)
+
+[![PyPI](https://img.shields.io/pypi/v/ciparity?style=flat-square&label=pypi&color=3775A9)](https://pypi.org/project/ciparity/)
+[![Python](https://img.shields.io/pypi/pyversions/ciparity?style=flat-square&color=4B8BBE)](https://pypi.org/project/ciparity/)
+[![CI](https://github.com/Topicspot/ciparity/actions/workflows/ci.yml/badge.svg)](https://github.com/Topicspot/ciparity/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](https://github.com/Topicspot/ciparity/blob/main/LICENSE)
+
 Your pre-commit hooks and your CI are supposed to run the same checks. Over time they stop.
 Someone bumps `ruff` in `.pre-commit-config.yaml` and not in the workflow, someone adds
 `mypy --strict` to CI only, someone adds a hook that CI never runs. Then the branch is green
@@ -58,7 +65,7 @@ As a pre-commit hook:
 ```yaml
 repos:
   - repo: https://github.com/Topicspot/ciparity
-    rev: v0.1.0
+    rev: v0.1.1
     hooks:
       - id: ciparity
 ```
