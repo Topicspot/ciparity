@@ -1,6 +1,6 @@
 [project]
 name = "ciparity"
-version = "0.1.0"
+version = "0.1.1"
 description = "Find drift between your pre-commit hooks and your GitHub Actions steps."
 readme = "README.md"
 requires-python = ">=3.10"
