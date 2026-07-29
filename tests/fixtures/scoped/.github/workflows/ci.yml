@@ -1,0 +1,7 @@
+name: CI
+on: [pull_request]
+jobs:
+  hooks:
+    runs-on: ubuntu-latest
+    steps:
+      - run: pre-commit run --from-ref origin/main --to-ref HEAD

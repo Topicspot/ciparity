@@ -1,4 +1,4 @@
-"""Parse GitHub Actions workflows into tool uses."""
+"""GitHub Actions provider."""
 
 from __future__ import annotations
 
@@ -9,8 +9,8 @@ from typing import Any
 
 import yaml
 
-from .model import ToolUse
-from .tools import ACTION_TOOLS, KNOWN_COMMANDS, WRAPPERS, canonical
+from ..model import CiFacts, ToolUse
+from ..tools import ACTION_TOOLS, KNOWN_COMMANDS, WRAPPERS, canonical
 
 _PIP_INSTALL = re.compile(
     r"\b(?:pip|pip3|uv pip|uv tool|pipx)\s+install\s+(?P<rest>[^\n&|;]+)", re.IGNORECASE
@@ -73,30 +73,38 @@ def _tool_from_tokens(tokens: list[str]) -> tuple[str, tuple[str, ...], str | No
     return name, flags, inline_version
 
 
-def _python_versions(node: Any, found: set[str]) -> None:
+def _versions_for(node: Any, keys: set[str], found: set[str]) -> None:
+    """Collect values of setup-action inputs such as `python-version`."""
     if isinstance(node, dict):
         for key, value in node.items():
-            if key in {"python-version", "python-versions"}:
+            if key in keys:
                 values = value if isinstance(value, list) else [value]
                 for item in values:
                     text = str(item).strip()
                     if text and not text.startswith("${{"):
                         found.add(text)
             else:
-                _python_versions(value, found)
+                _versions_for(value, keys, found)
     elif isinstance(node, list):
         for item in node:
-            _python_versions(item, found)
+            _versions_for(item, keys, found)
 
 
-def parse_workflow(path: Path) -> tuple[list[ToolUse], set[str]]:
-    """Return tool uses in one workflow file plus the python versions it sets up."""
+_PYTHON_KEYS = {"python-version", "python-versions"}
+_NODE_KEYS = {"node-version", "node-versions"}
+_PRECOMMIT_RUN = re.compile(r"pre-commit\s+run\b(?P<rest>[^\n]*)")
+
+
+def parse_workflow(path: Path) -> tuple[list[ToolUse], set[str], set[str]]:
+    """Return tool uses in one workflow plus the python and node versions it sets up."""
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     if not isinstance(data, dict):
-        return [], set()
+        return [], set(), set()
 
     pythons: set[str] = set()
-    _python_versions(data, pythons)
+    nodes: set[str] = set()
+    _versions_for(data, _PYTHON_KEYS, pythons)
+    _versions_for(data, _NODE_KEYS, nodes)
 
     uses: list[ToolUse] = []
     jobs = data.get("jobs")
@@ -144,14 +152,42 @@ def parse_workflow(path: Path) -> tuple[list[ToolUse], set[str]]:
                         location=location,
                     )
                 )
-    return uses, pythons
+    return uses, pythons, nodes
 
 
-def parse_workflows(directory: Path) -> tuple[list[ToolUse], set[str]]:
-    uses: list[ToolUse] = []
-    pythons: set[str] = set()
-    for path in sorted(directory.glob("*.y*ml")):
-        found, versions = parse_workflow(path)
-        uses.extend(found)
-        pythons |= versions
-    return uses, pythons
+def _precommit_invocation(text: str) -> tuple[bool, bool]:
+    """Return whether a workflow runs pre-commit, and whether it covers every file."""
+    if "pre-commit/action" in text:
+        # The official action runs `pre-commit run --all-files` by default.
+        return True, True
+    runs = _PRECOMMIT_RUN.findall(text)
+    if not runs:
+        return False, True
+    all_files = any("--all-files" in rest or "-a " in f" {rest} " for rest in runs)
+    return True, all_files
+
+
+class GitHubActions:
+    """Reads `.github/workflows/*.yml`."""
+
+    name = "GitHub Actions"
+
+    def workflow_dir(self, root: Path) -> Path:
+        return root / ".github" / "workflows"
+
+    def detect(self, root: Path) -> bool:
+        directory = self.workflow_dir(root)
+        return directory.is_dir() and any(directory.glob("*.y*ml"))
+
+    def parse(self, root: Path) -> CiFacts:
+        directory = self.workflow_dir(root)
+        facts = CiFacts(provider=self.name)
+        text = ""
+        for path in sorted(directory.glob("*.y*ml")):
+            uses, pythons, nodes = parse_workflow(path)
+            facts.uses.extend(uses)
+            facts.pythons |= pythons
+            facts.nodes |= nodes
+            text += path.read_text(encoding="utf-8") + "\n"
+        facts.runs_precommit, facts.precommit_all_files = _precommit_invocation(text)
+        return facts

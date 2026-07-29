@@ -48,10 +48,20 @@ El código de salida es 1 cuando hay diferencias, así que sirve como comprobaci
 | Argumentos distintos | `--strict` se pasa en CI pero no en el hook |
 | Versión de Python | `default_language_version: python3.11` mientras CI instala solo 3.12 |
 
+## Corrección automática
+
+```bash
+ciparity --fix
+```
+
+Cambia el `rev:` de `.pre-commit-config.yaml` a la versión que CI ya usa. El archivo se edita
+como texto, así que los comentarios, las comillas y el orden de las claves se conservan.
+`--fix --dry-run` muestra el diff sin escribir nada. Los workflows nunca se modifican.
+
 ## Uso
 
 ```
-ciparity [path] [--json] [--ignore pytest,codespell] [--exit-zero]
+ciparity [path] [--fix [--dry-run]] [--json] [--ignore pytest,codespell] [--exit-zero]
 ```
 
 Como hook de pre-commit:
@@ -59,7 +69,7 @@ Como hook de pre-commit:
 ```yaml
 repos:
   - repo: https://github.com/Topicspot/ciparity
-    rev: v0.1.1
+    rev: v0.2.0
     hooks:
       - id: ciparity
 ```
