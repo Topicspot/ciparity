@@ -1,7 +1,7 @@
 [project]
 name = "ciparity"
-version = "0.3.0"
-description = "Find drift between your pre-commit hooks and your GitHub Actions steps."
+version = "0.3.1"
+description = "Find drift between your pre-commit hooks and your CI pipeline (GitHub Actions, GitLab CI)."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -23,6 +23,17 @@ Repository = "https://github.com/Topicspot/ciparity"
 Issues = "https://github.com/Topicspot/ciparity/issues"
 Changelog = "https://github.com/Topicspot/ciparity/blob/main/CHANGELOG.md"
 
+[project.optional-dependencies]
+dev = [
+  "pytest>=9.0",
+  "ruff==0.16.0",
+  "mypy==2.3.0",
+  "types-PyYAML",
+  "vulture>=2.16",
+  "pip-audit>=2.7",
+  "pillow>=11",
+]
+
 [project.scripts]
 ciparity = "ciparity.cli:main"
 
@@ -43,7 +54,17 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 [tool.mypy]
 python_version = "3.10"
 strict = true
-files = ["src", "tests"]
+files = ["src", "tests", "scripts"]
+
+# Pillow is a dev-only dependency of scripts/demo_gif.py. CI installs the type checker
+# without it, so the import must not be a hard error.
+[[tool.mypy.overrides]]
+module = ["PIL.*"]
+ignore_missing_imports = true
+
+[tool.vulture]
+paths = ["src"]
+min_confidence = 80
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
