@@ -56,6 +56,12 @@ python_version = "3.10"
 strict = true
 files = ["src", "tests", "scripts"]
 
+# Pillow is a dev-only dependency of scripts/demo_gif.py. CI installs the type checker
+# without it, so the import must not be a hard error.
+[[tool.mypy.overrides]]
+module = ["PIL.*"]
+ignore_missing_imports = true
+
 [tool.vulture]
 paths = ["src"]
 min_confidence = 80
