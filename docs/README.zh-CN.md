@@ -21,25 +21,9 @@ pip install ciparity
 ciparity .
 ```
 
-```
-pre-commit hooks: 5   CI steps: 4   ci: GitHub Actions
+![ciparity demo](https://raw.githubusercontent.com/Topicspot/ciparity/main/assets/demo.gif)
 
-mypy     arguments differ: different arguments
-           pre-commit: -
-           ci:         --strict
-ruff     version differs: pinned to different versions
-           pre-commit: 0.5.0
-           ci:         0.6.2
-           fix:        rev v0.5.0 -> v0.6.2
-vulture  not in pre-commit: runs in CI but is not a pre-commit hook
-           ci:         ci.yml:test
-python   python differs: pre-commit pins a python version CI never sets up
-           pre-commit: 3.11
-           ci:         3.12
-
-4 difference(s).
-1 can be fixed automatically: ciparity --fix
-```
+上面的录屏由 `scripts/demo_gif.py` 基于真实运行生成，因此不会与实际输出脱节。
 
 存在差异时退出码为 1，因此它可以直接当作一项检查使用。
 
@@ -63,7 +47,7 @@ ciparity --fix
 
 ## 用法
 
-```
+```text
 ciparity [path] [--fix [--dry-run]] [--json] [--ignore pytest,codespell] [--exit-zero]
 ```
 
@@ -72,9 +56,17 @@ ciparity [path] [--fix [--dry-run]] [--json] [--ignore pytest,codespell] [--exit
 ```yaml
 repos:
   - repo: https://github.com/Topicspot/ciparity
-    rev: v0.3.0
+    rev: v0.3.1
     hooks:
       - id: ciparity
+```
+
+在 GitHub Actions 中：
+
+```yaml
+- uses: Topicspot/ciparity@v0.3.1
+  with:
+    path: .
 ```
 
 ## 局限

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.1 - 2026-08-01
+
+- New GitHub Action: `uses: Topicspot/ciparity@v0.3.1` runs the published package as a step in an
+  existing workflow, so the job fails when hooks and CI drift apart.
+- README shows a terminal recording generated from real runs by `scripts/demo_gif.py` instead of
+  hand-typed output blocks.
+- `scripts/check.sh` runs the full local quality gate, `CONTRIBUTING.md` documents it.
+- Package description now mentions GitLab CI, which has been supported since 0.3.0.
+
 ## 0.3.0 - 2026-07-29
 
 - GitLab CI is parsed: jobs in `.gitlab-ci.yml`, commands from `before_script`, `script` and
