@@ -21,44 +21,10 @@ pip install ciparity
 ciparity .
 ```
 
-```
-pre-commit hooks: 5   CI steps: 4   ci: GitHub Actions
+![ciparity demo](https://raw.githubusercontent.com/Topicspot/ciparity/main/assets/demo.gif)
 
-mypy     arguments differ: different arguments
-           pre-commit: -
-           ci:         --strict
-ruff     version differs: pinned to different versions
-           pre-commit: 0.5.0
-           ci:         0.6.2
-           fix:        rev v0.5.0 -> v0.6.2
-vulture  not in pre-commit: runs in CI but is not a pre-commit hook
-           ci:         ci.yml:test
-python   python differs: pre-commit pins a python version CI never sets up
-           pre-commit: 3.11
-           ci:         3.12
-
-4 difference(s).
-1 can be fixed automatically: ciparity --fix
-```
-
-```console
-$ ciparity --fix
---- .pre-commit-config.yaml
-+++ .pre-commit-config.yaml
-@@ -2,7 +2,7 @@
-   python: python3.11
- repos:
-   - repo: https://github.com/astral-sh/ruff-pre-commit
--    rev: v0.5.0
-+    rev: v0.6.2
-     hooks:
-       - id: ruff
-         args: [--fix]
-
-https://github.com/astral-sh/ruff-pre-commit: rev v0.5.0 -> v0.6.2
-
-Wrote .pre-commit-config.yaml. 1 fixed, 3 left.
-```
+The recording above is generated from real runs by `scripts/demo_gif.py`, so it cannot drift
+away from what the tool actually prints.
 
 `--fix` edits `.pre-commit-config.yaml` as text, so comments, quotes and key order survive. It
 moves hooks onto the version CI already uses, because CI is the version every reviewer sees.
@@ -94,7 +60,7 @@ pipelines gets reported instead of silently fixed.
 
 ## Usage
 
-```
+```text
 ciparity [path] [--fix [--dry-run]] [--json] [--ignore pytest,codespell] [--exit-zero]
 ```
 
@@ -103,10 +69,22 @@ As a pre-commit hook:
 ```yaml
 repos:
   - repo: https://github.com/Topicspot/ciparity
-    rev: v0.3.0
+    rev: v0.3.1
     hooks:
       - id: ciparity
 ```
+
+In GitHub Actions, as a step in the workflow you already have:
+
+```yaml
+- uses: Topicspot/ciparity@v0.3.1
+  with:
+    path: .
+    args: --ignore codespell
+```
+
+The action installs the published package and runs it, so the job fails when the two sides drift
+apart. `version:` pins a release; leaving it empty installs the latest one.
 
 ## Deliberate non-goals and limits
 
@@ -143,7 +121,7 @@ This project is free and MIT-licensed. If it saved you time, you can send a coff
 
 **USDT, Tron network (TRC-20) only:**
 
-```
+```text
 TS9ywGeSyKQxiCszdKCHLR8DRAsnYCosNN
 ```
 
