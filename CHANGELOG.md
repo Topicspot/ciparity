@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- The quality gate is now declared on both sides: `vulture`, `pip-audit`, `markdownlint-cli2`,
+  `gitleaks` and `lychee` run in CI and are listed in `.pre-commit-config.yaml`, so
+  `ciparity .` on this repository has something real to compare instead of five hooks CI
+  never runs.
+- `scripts/pip_audit.sh` exports the dev dependencies and audits them, shared by the hook and
+  `scripts/check.sh`.
+
 ## 0.3.1 - 2026-08-01
 
 - New GitHub Action: `uses: Topicspot/ciparity@v0.3.1` runs the published package as a step in an
