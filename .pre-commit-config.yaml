@@ -18,3 +18,36 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
+  # The rest of the gate. Every hook here has a matching step in
+  # .github/workflows/ci.yml, which is what ciparity itself checks.
+  - repo: local
+    hooks:
+      - id: vulture
+        name: vulture
+        entry: uv run vulture
+        language: system
+        pass_filenames: false
+      - id: pip-audit
+        name: pip-audit
+        entry: scripts/pip_audit.sh
+        args: [--no-deps, -r, /tmp/ciparity-req.txt]
+        language: system
+        pass_filenames: false
+      - id: markdownlint-cli2
+        name: markdownlint-cli2
+        entry: npx markdownlint-cli2
+        args: ["**/*.md"]
+        language: system
+        pass_filenames: false
+      - id: gitleaks
+        name: gitleaks
+        entry: gitleaks detect
+        args: [--source, ., --redact]
+        language: system
+        pass_filenames: false
+      - id: lychee
+        name: lychee
+        entry: lychee
+        args: [--no-progress, --include-fragments, README.md]
+        language: system
+        pass_filenames: false

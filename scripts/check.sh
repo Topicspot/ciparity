@@ -18,9 +18,7 @@ step "mypy --strict" uv run mypy
 step "pytest" uv run python -m pytest -q
 step "vulture" uv run vulture
 step "ciparity on itself" uv run ciparity .
-export_req() { uv export --no-emit-project --extra dev -o /tmp/ciparity-req.txt -q; }
-pip_audit() { export_req && uv run pip-audit --no-deps -r /tmp/ciparity-req.txt; }
-step "pip-audit" pip_audit
+step "pip-audit" scripts/pip_audit.sh
 step "markdownlint" npx -y markdownlint-cli2 "**/*.md"
 if command -v gitleaks >/dev/null 2>&1; then
   step "gitleaks" gitleaks detect --source . --redact
