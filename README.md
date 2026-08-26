@@ -114,23 +114,3 @@ apart. `version:` pins a release; leaving it empty installs the latest one.
 ## License
 
 MIT
-
-## ☕ Support the author
-
-This project is free and MIT-licensed. If it saved you time, you can send a coffee.
-
-**USDT, Tron network (TRC-20) only:**
-
-```text
-TS9ywGeSyKQxiCszdKCHLR8DRAsnYCosNN
-```
-
-<details>
-<summary>Другие языки / Other languages</summary>
-
-- **Українська:** проєкт безкоштовний. Якщо він заощадив вам час — можна підтримати автора,
-  USDT у мережі Tron (TRC-20), адреса вище.
-- **Русский:** проект бесплатный. Если он сэкономил вам время, можно поддержать автора,
-  USDT в сети Tron (TRC-20), адрес выше.
-
-</details>
