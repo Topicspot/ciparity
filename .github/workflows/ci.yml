@@ -20,9 +20,26 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - run: uv pip install --system -e . pytest ruff==0.16.0 mypy==2.3.0 types-PyYAML
+      - run: uv pip install --system -e . pytest ruff==0.16.0 mypy==2.3.0 types-PyYAML vulture pip-audit
       - run: ruff check .
       - run: ruff format --check .
       - run: mypy
       - run: pytest -q
       - run: ciparity .
+      - run: vulture
+      - name: Export dev requirements
+        run: uv export --no-emit-project --extra dev -o /tmp/ciparity-req.txt -q
+      - run: pip-audit --no-deps -r /tmp/ciparity-req.txt
+      - name: Install markdownlint-cli2
+        run: npm install -g markdownlint-cli2
+      - run: markdownlint-cli2 "**/*.md"
+      - name: Install gitleaks
+        run: |
+          curl -sL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz | tar xz gitleaks
+          sudo mv gitleaks /usr/local/bin/
+      - run: gitleaks detect --source . --redact
+      - name: Install lychee
+        run: |
+          curl -sL https://github.com/lycheeverse/lychee/releases/latest/download/lychee-x86_64-unknown-linux-gnu.tar.gz | tar xz
+          sudo mv lychee-x86_64-unknown-linux-gnu/lychee /usr/local/bin/
+      - run: lychee --no-progress --include-fragments README.md
